@@ -26,6 +26,195 @@ struct Graph {
     int numNodes;
 };
 
+//AVL tree
+struct AVLNode {
+    struct Node *data;
+    int height;
+    struct AVLNode *left;
+    struct AVLNode *right;
+};
+
+// Function to get the height of an AVL tree node
+int getHeight(struct AVLNode *node) {
+    if (node == NULL) return 0;
+    return node->height;
+}
+
+// Function to get the balance factor of an AVL tree node
+int getBalance(struct AVLNode *node) {
+    if (node == NULL) return 0;
+    return getHeight(node->left) - getHeight(node->right);
+}
+
+// Function to perform a right rotation in AVL tree
+struct AVLNode *rightRotate(struct AVLNode *y) {
+    struct AVLNode *x = y->left;
+    struct AVLNode *T2 = x->right;
+
+    // Perform rotation
+    x->right = y;
+    y->left = T2;
+
+    // Update heights
+    y->height = 1 + fmax(getHeight(y->left), getHeight(y->right));
+    x->height = 1 + fmax(getHeight(x->left), getHeight(x->right));
+
+    return x;
+}
+
+// Function to perform a left rotation in AVL tree
+struct AVLNode *leftRotate(struct AVLNode *x) {
+    struct AVLNode *y = x->right;
+    struct AVLNode *T2 = y->left;
+
+    // Perform rotation
+    y->left = x;
+    x->right = T2;
+
+    // Update heights
+    x->height = 1 + fmax(getHeight(x->left), getHeight(x->right));
+    y->height = 1 + fmax(getHeight(y->left), getHeight(y->right));
+
+    return y;
+}
+
+// Function to insert a node into AVL tree
+struct AVLNode *insertAVL(struct AVLNode *root, struct Node *data) {
+    if (root == NULL) {
+        struct AVLNode *newNode = (struct AVLNode *)malloc(sizeof(struct AVLNode));
+        newNode->data = data;
+        newNode->left = newNode->right = NULL;
+        newNode->height = 1;
+        return newNode;
+    }
+
+    if (data->housingPrice < root->data->housingPrice)
+        root->left = insertAVL(root->left, data);
+    else if (data->housingPrice > root->data->housingPrice)
+        root->right = insertAVL(root->right, data);
+    else
+        return root; // Duplicate keys are not allowed
+
+    // Update height of the current node
+    root->height = 1 + fmax(getHeight(root->left), getHeight(root->right));
+
+    // Get the balance factor to check for rotation
+    int balance = getBalance(root);
+
+    // Left Left Case
+    if (balance > 1 && data->housingPrice < root->left->data->housingPrice)
+        return rightRotate(root);
+
+    // Right Right Case
+    if (balance < -1 && data->housingPrice > root->right->data->housingPrice)
+        return leftRotate(root);
+
+    // Left Right Case
+    if (balance > 1 && data->housingPrice > root->left->data->housingPrice) {
+        root->left = leftRotate(root->left);
+        return rightRotate(root);
+    }
+
+    // Right Left Case
+    if (balance < -1 && data->housingPrice < root->right->data->housingPrice) {
+        root->right = rightRotate(root->right);
+        return leftRotate(root);
+    }
+
+    return root;
+}
+
+// Function to find the node with the maximum value in AVL tree
+struct AVLNode *findMaxAVL(struct AVLNode *root) {
+    while (root->right != NULL)
+        root = root->right;
+    return root;
+}
+
+// Function to delete a node from AVL tree
+struct AVLNode *deleteNodeAVL(struct AVLNode *root, int housingPrice) {
+    if (root == NULL) return root;
+
+    if (housingPrice < root->data->housingPrice)
+        root->left = deleteNodeAVL(root->left, housingPrice);
+    else if (housingPrice > root->data->housingPrice)
+        root->right = deleteNodeAVL(root->right, housingPrice);
+    else {
+        if (root->left == NULL) {
+            struct AVLNode *temp = root->right;
+            free(root);
+            return temp;
+        } else if (root->right == NULL) {
+            struct AVLNode *temp = root->left;
+            free(root);
+            return temp;
+        }
+
+        struct AVLNode *temp = findMaxAVL(root->left);
+        root->data = temp->data;
+        root->left = deleteNodeAVL(root->left, temp->data->housingPrice);
+    }
+
+    // Update height of the current node
+    root->height = 1 + fmax(getHeight(root->left), getHeight(root->right));
+
+    // Get the balance factor to check for rotation
+    int balance = getBalance(root);
+
+    // Left Left Case
+    if (balance > 1 && getBalance(root->left) >= 0)
+        return rightRotate(root);
+
+    // Left Right Case
+    if (balance > 1 && getBalance(root->left) < 0) {
+        root->left = leftRotate(root->left);
+        return rightRotate(root);
+    }
+
+    // Right Right Case
+    if (balance < -1 && getBalance(root->right) <= 0)
+        return leftRotate(root);
+
+    // Right Left Case
+    if (balance < -1 && getBalance(root->right) > 0) {
+        root->right = rightRotate(root->right);
+        return leftRotate(root);
+    }
+
+    return root;
+}
+
+// Function to display the AVL tree in-order
+void inOrderTraversal(struct AVLNode *root) {
+    if (root != NULL) {
+        inOrderTraversal(root->left);
+        printf("Node %d: Housing Price = %d\n", root->data->location, root->data->housingPrice);
+        inOrderTraversal(root->right);
+    }
+}
+
+struct AVLNode *buildAVLTree(struct Graph *graph) {
+    struct AVLNode *avlTree = NULL;
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+            avlTree = insertAVL(avlTree, &graph->nodes[i]);
+        }
+    }
+    return avlTree;
+}
+
+// Function to find and display empty land with the highest cost using AVL tree
+void findAndDisplayMaxCostEmptyLand(struct AVLNode *root) {
+    if (root == NULL) {
+        printf("No empty lands in AVL tree.\n");
+        return;
+    }
+
+    struct AVLNode *maxNode = findMaxAVL(root);
+
+    printf("Empty Land with Highest Cost: Node %d, Housing Price = %d\n", maxNode->data->location, maxNode->data->housingPrice);
+}
+
 // Declare a global array to keep track of chosen optimal locations
 int chosenOptimalLocations[MAX_NODES];
 
@@ -261,9 +450,9 @@ void displayMenu() {
     printf("1. Find the best optimal location for the house\n");
     printf("2. Find the second best optimal location for the house\n");
     printf("3. Find the third best optimal location for the house\n");
-    // Add more options as needed
+    printf("4. Find empty land with highest cost\n");  // Add the new option
 
-    printf("Enter your choice (1, 2, 3, ...): ");
+    printf("Enter your choice (1, 2, 3, 4): ");
 }
 // Function to run Dijkstra's algorithm and display shortest paths
 void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
@@ -391,6 +580,8 @@ int main() {
         chosenOptimalLocations[i] = -1;
     }
 
+    struct AVLNode *avlTree = NULL;
+
     do {
         displayMenu();
         scanf("%d", &choice);
@@ -425,6 +616,7 @@ int main() {
                 if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
                     printf("\nThere are no empty lands.\n");
                 } else {
+                    avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
                     printf("\nThe best optimal location for the house is Node %d (empty land).\n", optimalLocation);
                     displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
                 }
@@ -458,6 +650,7 @@ int main() {
                 if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
                     printf("\nThere are no empty lands.\n");
                 } else {
+                    avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
                     printf("\nThe second best optimal location for the house is Node %d (empty land).\n", optimalLocation);
                     displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
                 }
@@ -491,16 +684,23 @@ int main() {
                 if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
                     printf("\nThere are no empty lands.\n");
                 } else {
+                    avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
                     printf("\nThe third best optimal location for the house is Node %d (empty land).\n", optimalLocation);
                     displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
                 }
                 break;
+            case 4:
+                avlTree = buildAVLTree(&cityGraph);
+                printf("\nEmpty land with highest cost found using AVL tree:\n");
+                findAndDisplayMaxCostEmptyLand(avlTree);
+                break;
+
             default:
                 printf("Invalid choice. Exiting...\n");
                 return 0;
         }
 
-    } while (choice >= 1 && choice <= 3);  // Continue the loop for valid choices
+    } while (choice >= 1 && choice <= 4);  // Continue the loop for valid choices
 
     return 0;
 }
