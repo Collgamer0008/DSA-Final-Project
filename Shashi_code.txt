@@ -143,10 +143,7 @@ void input_edge_data(struct Graph *graph)
             {
                 printf("\nEnter distance between Node %d and Node %d: ", i + 1, j + 1);
                 scanf("%d", &graph->edges[i][j].distance);
-                graph->edges
-
-                    [j][i]
-                        .distance = graph->edges[i][j].distance; // Make the graph undirected
+                graph->edges[j][i].distance = graph->edges[i][j].distance; // Make the graph undirected
 
                 printf("Enter traffic between Node %d and Node %d (Low(L), Medium(M), High(H)): ", i + 1, j + 1);
                 char traffic_input[10];
@@ -193,7 +190,8 @@ void calculate_overall_cost(struct Graph *graph)
             {
                 overall_cost += 1; // Low traffic
             }
-            else if (graph->edges[i][j].traffic == 'M' || graph->edges[i][j].traffic == 'm')
+            else if (graph->edges[i][j].traffic == 'M' ||
+                     graph->edges[i][j].traffic == 'm')
             {
                 overall_cost += 2; // Medium traffic
             }
@@ -285,8 +283,6 @@ int find_optimal_location(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], i
                 // Additional cost based on traffic
                 if (graph->edges[i][j].traffic == 'L' || graph->edges[i][j].traffic == 'l')
                 {
-                    current_cost += 1; //
-
                     current_cost += 1; // Low traffic
                 }
                 else if (graph->edges[i][j].traffic == 'M' || graph->edges[i][j].traffic == 'm')
@@ -328,8 +324,8 @@ void display_menu()
 {
     printf("\nMenu:\n");
     printf("1. Find the best optimal location for the house\n");
-    printf("2. Find the second best optimal location for the house\n");
-    printf("3. Find the third best optimal location for the house\n");
+    printf("2. Find the second-best optimal location for the house\n");
+    printf("3. Find the third-best optimal location for the house\n");
     // Add more options as needed
 
     printf("Enter your choice (1, 2, 3, ...): ");
@@ -399,44 +395,45 @@ void bellman_ford_algorithm(struct Graph *graph, int dist[MAX_NODES], int next[M
         }
     }
 }
-
-// Updated main function
-void display_shortest_distances(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimal_node)
+int calculate_overall_cost_for_location(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES], int location)
 {
-    printf("\nTotal Distance from Optimal Node to Other Nodes:\n");
+    int overall_cost = graph->nodes[location].housing_price; // Fixed indexing
 
+    for (int j = 0; j < graph->num_nodes; ++j)
+    {
+        overall_cost += dist[location][j];
+        // Additional cost based on traffic
+        if (graph->edges[location][j].traffic == 'L' || graph->edges[location][j].traffic == 'l')
+        {
+            overall_cost += 1; // Low traffic
+        }
+        else if (graph->edges[location][j].traffic == 'M' || graph->edges[location][j].traffic == 'm')
+        {
+            overall_cost += 2; // Medium traffic
+        }
+        else if (graph->edges[location][j].traffic == 'H' || graph->edges[location][j].traffic == 'h')
+        {
+            overall_cost += 3; // High traffic
+        }
+    }
+
+    return overall_cost;
+}
+
+// Function to display the total distance from the optimal empty land to all locations
+void display_total_distance_from_optimal(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimal_empty_land)
+{
+    printf("\nTotal Distance from Optimal Empty Land (Node %d) to All Locations:\n", optimal_empty_land + 1);
     for (int i = 0; i < graph->num_nodes; ++i)
     {
-        if (i != optimal_node)
+        if (i != optimal_empty_land)
         {
-            printf("Optimal Node to Node %d (%s): ", i + 1, graph->nodes[i].type);
-
-            // Display the total distance
-            printf("%d\n", dist[optimal_node][i]);
+            display_shortest_path(graph, dist, optimal_empty_land, i + 1);
         }
     }
 }
 
-// Updated main function
-void display_total_distance_from_optimal(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimal_node)
-{
-    printf("\nTotal Distance from Optimal Node to Other Nodes:\n");
-
-    for (int i = 0; i < graph->num_nodes; ++i)
-    {
-        if (i != optimal_node && strcmp(graph->nodes[i].type,
-
-                                        "empty") == 0)
-        {
-            printf("Optimal Node to Node %d (%s): ", i + 1, graph->nodes[i].type);
-
-            // Display the total distance
-            printf("%d\n", dist[optimal_node][i]);
-        }
-    }
-}
-
-// Function to check if there are any empty lands left
+// Function to check if there are any empty lands in the graph
 bool has_empty_lands(struct Graph *graph)
 {
     for (int i = 0; i < graph->num_nodes; ++i)
@@ -449,6 +446,52 @@ bool has_empty_lands(struct Graph *graph)
     return false;
 }
 
+// Function to sort the optimal locations based on their overall cost
+void sort_optimal_locations(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES], int *optimal_locations)
+{
+    // Sort the optimal locations based on their overall cost (bubble sort)
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 2 - i; ++j)
+        {
+            int location1 = optimal_locations[j];
+            int location2 = optimal_locations[j + 1];
+
+            int cost1 = calculate_overall_cost_for_location(graph, dist, next, location1);
+            int cost2 = calculate_overall_cost_for_location(graph, dist, next, location2);
+
+            if (cost1 > cost2)
+            {
+                // Swap locations
+                int temp = optimal_locations[j];
+                optimal_locations[j] = optimal_locations[j + 1];
+                optimal_locations[j + 1] = temp;
+            }
+        }
+    }
+}
+
+// Function to calculate the overall cost for a specific location
+/*
+The program provides the following functionalities:
+
+Input Data: Allows the user to input data for each node, including housing prices and types. It also enables the user to input edge data, including distances and traffic conditions between nodes.
+
+Connectivity Check: Verifies if the city graph is connected, ensuring that all locations are reachable.
+
+Algorithm Choices: The user can choose between two algorithms for finding optimal locations:
+
+Floyd's Algorithm: Computes the shortest paths between all pairs of nodes in the graph.
+Bellman-Ford Algorithm: Finds the shortest paths from a specified starting node using dynamic programming.
+Optimal Location Search: Finds the best, second-best, and third-best optimal locations for a house based on the minimum overall cost. The overall cost includes factors like housing prices, distances, and traffic conditions.
+
+Sorting and Display: Sorts the optimal locations based on their overall cost and displays them, along with the total distance from each optimal location to other locations in the city.
+
+Additional Features: The program incorporates functions to check for the existence of empty lands, display shortest paths, and calculate the overall cost for a specific location.
+
+Overall, the program assists in decision-making for house placement by considering various factors such as housing prices, transportation, and connectivity within the city. The choice of algorithms allows for flexibility in finding optimal locations based on user preferences.
+
+*/
 // Updated main function
 int main()
 {
@@ -468,11 +511,17 @@ int main()
     int dist[MAX_NODES][MAX_NODES];
     int next[MAX_NODES][MAX_NODES];
     floyds_algorithm(&city_graph, dist, next); // Initialize next array with Floyd's algorithm
+    printf("\n");
+    printf("\n");
+
+    printf("For builders only :");
+    printf("\n");
 
     calculate_overall_cost(&city_graph);
 
     int choice;
     int optimal_location;
+    int optimal_locations[3] = {0}; // Array to store the optimal locations
 
     // Initialize the 'next' array before entering the loop
     for (int i = 0; i < MAX_NODES; ++i)
@@ -497,18 +546,20 @@ int main()
         switch (choice)
         {
         case 1:
+        case 2:
+        case 3:
             printf("Choose algorithm for finding total distance:\n");
             printf("1. Floyd's Algorithm\n");
             printf("2. Bellman-Ford Algorithm\n");
             printf("Enter your choice (1, 2): ");
-            int algorithm_choice1;
-            scanf("%d", &algorithm_choice1);
+            int algorithm_choice;
+            scanf("%d", &algorithm_choice);
 
-            switch (algorithm_choice1)
+            switch (algorithm_choice)
             {
             case 1:
                 optimal_location = find_optimal_location(&city_graph, dist, next);
-                chosen_optimal_locations[0] = optimal_location;
+                chosen_optimal_locations[choice - 1] = optimal_location;
                 break;
             case 2:
                 printf("Enter the starting node for Bellman-Ford Algorithm: ");
@@ -516,7 +567,7 @@ int main()
                 scanf("%d", &bellman_ford_start_node);
                 bellman_ford_algorithm(&city_graph, dist[bellman_ford_start_node - 1], next[bellman_ford_start_node - 1], bellman_ford_start_node - 1);
                 optimal_location = find_optimal_location(&city_graph, dist, next);
-                chosen_optimal_locations[0] = optimal_location;
+                chosen_optimal_locations[choice - 1] = optimal_location;
                 break;
             default:
                 printf("Invalid choice. Exiting...\n");
@@ -533,87 +584,36 @@ int main()
                 display_total_distance_from_optimal(&city_graph, dist, optimal_location - 1);
             }
             break;
-        case 2:
-            printf("Choose algorithm for finding total distance:\n");
-            printf("1. Floyd's Algorithm\n");
-            printf("2. Bellman-Ford Algorithm\n");
-            printf("Enter your choice (1, 2): ");
-            int algorithm_choice2;
-            scanf("%d", &algorithm_choice2);
-
-            switch (algorithm_choice2)
-            {
-            case 1:
-                optimal_location = find_optimal_location(&city_graph, dist, next);
-                chosen_optimal_locations[1] = optimal_location;
-                break;
-            case 2:
-                printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                int bellman_ford_start_node;
-                scanf("%d", &bellman_ford_start_node);
-                bellman_ford_algorithm(&city_graph, dist[bellman_ford_start_node - 1], next[bellman_ford_start_node - 1], bellman_ford_start_node - 1);
-                optimal_location = find_optimal_location(&city_graph, dist, next);
-                chosen_optimal_locations[1] = optimal_location;
-                break;
-            default:
-                printf("Invalid choice. Exiting...\n");
-                return 0;
-            }
-
-            if (optimal_location == -1 || !has_empty_lands(&city_graph))
-            {
-                printf("\nThere are no empty lands.\n");
-            }
-
-            else
-            {
-                printf("\nThe second best optimal location for the house is Node %d (empty land).\n", optimal_location);
-                display_total_distance_from_optimal(&city_graph, dist, optimal_location - 1);
-            }
-            break;
-        case 3:
-            printf("Choose algorithm for finding total distance:\n");
-            printf("1. Floyd's Algorithm\n");
-            printf("2. Bellman-Ford Algorithm\n");
-            printf("Enter your choice (1, 2): ");
-            int algorithm_choice3;
-            scanf("%d", &algorithm_choice3);
-
-            switch (algorithm_choice3)
-            {
-            case 1:
-                optimal_location = find_optimal_location(&city_graph, dist, next);
-                chosen_optimal_locations[2] = optimal_location;
-                break;
-            case 2:
-                printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                int bellman_ford_start_node;
-                scanf("%d", &bellman_ford_start_node);
-                bellman_ford_algorithm(&city_graph, dist[bellman_ford_start_node - 1], next[bellman_ford_start_node - 1], bellman_ford_start_node - 1);
-                optimal_location = find_optimal_location(&city_graph, dist, next);
-                chosen_optimal_locations[2] = optimal_location;
-                break;
-            default:
-                printf("Invalid choice. Exiting...\n");
-                return 0;
-            }
-
-            if (optimal_location == -1 || !has_empty_lands(&city_graph))
-            {
-                printf("\nThere are no empty lands.\n");
-            }
-            else
-            {
-                printf("\nThe third best optimal location for the house is Node %d (empty land).\n", optimal_location);
-                display_total_distance_from_optimal(&city_graph, dist, optimal_location - 1);
-            }
-            break;
         default:
             printf("Invalid choice. Exiting...\n");
             return 0;
         }
 
     } while (choice >= 1 && choice <= 3); // Continue the loop for valid choices
+
+    // Store the chosen optimal locations in an array
+    for (int i = 0; i < 3; ++i)
+    {
+        optimal_locations[i] = chosen_optimal_locations[i];
+    }
+
+    // Sort the optimal locations based on their overall cost
+    sort_optimal_locations(&city_graph, dist, next, optimal_locations);
+
+    // Display the sorted optimal locations
+
+    printf("\nOptimal Locations Sorted by Overall Cost:\n");
+
+    for (int i = 0; i < 3; ++i)
+    {
+        int location = optimal_locations[i];
+
+        if (location != -1)
+        {
+            printf("%d. Node %d (Empty Land)\n", i + 1, location);
+            display_total_distance_from_optimal(&city_graph, dist, location - 1);
+        }
+    }
 
     return 0;
 }
