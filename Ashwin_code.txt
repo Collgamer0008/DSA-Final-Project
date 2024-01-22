@@ -50,6 +50,7 @@ struct SegmentTreeNode
 };
 
 // Function to get the height of an AVL tree node
+
 int getHeight(struct AVLNode *node)
 {
     if (node == NULL)
