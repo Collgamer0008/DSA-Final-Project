@@ -433,6 +433,65 @@ int findOptimalLocation(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int
     return optimalLocation;
 }
 
+void heapify(struct Node arr[], int n, int i) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+
+    if (left < n && arr[left].housingPrice > arr[largest].housingPrice)
+        largest = left;
+
+    if (right < n && arr[right].housingPrice > arr[largest].housingPrice)
+        largest = right;
+
+    if (largest != i) {
+        struct Node temp = arr[i];
+        arr[i] = arr[largest];
+        arr[largest] = temp;
+
+        heapify(arr, n, largest);
+    }
+}
+
+void heapSort(struct Node arr[], int n) {
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i);
+
+    for (int i = n - 1; i > 0; i--) {
+        struct Node temp = arr[0];
+        arr[0] = arr[i];
+        arr[i] = temp;
+
+        heapify(arr, i, 0);
+    }
+}
+
+// Function to list all nodes in increasing order of housing cost
+void listAllNodes(struct Graph *graph) {
+    struct Node sortedNodes[MAX_NODES];
+    for (int i = 0; i < graph->numNodes; ++i) {
+        sortedNodes[i] = graph->nodes[i];
+    }
+
+    heapSort(sortedNodes, graph->numNodes);
+
+    printf("\nList of All Nodes in Increasing Order of Housing Cost:\n");
+    for (int i = 0; i < graph->numNodes; ++i) {
+        printf("Node %d: Housing Price = %d\n", sortedNodes[i].location, sortedNodes[i].housingPrice);
+    }
+}
+
+// Function to list all edges with distance and traffic values
+void listAllEdges(struct Graph *graph) {
+    printf("\nList of All Edges with Distance and Traffic Values:\n");
+    for (int i = 0; i < graph->numNodes; ++i) {
+        for (int j = i + 1; j < graph->numNodes; ++j) {
+            printf("Edge between Node %d and Node %d: Distance = %d, Traffic = %c\n", i + 1, j + 1,
+                   graph->edges[i][j].distance, graph->edges[i][j].traffic);
+        }
+    }
+}
+
 // Function to display the shortest path from the optimal empty land to a specified location
 void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES], int optimalEmptyLand, int destination) {
     printf("Optimal Empty Land to Node %d (%s): ", destination, graph->nodes[destination - 1].type);
@@ -450,9 +509,11 @@ void displayMenu() {
     printf("1. Find the best optimal location for the house\n");
     printf("2. Find the second best optimal location for the house\n");
     printf("3. Find the third best optimal location for the house\n");
-    printf("4. Find empty land with highest cost\n");  // Add the new option
+    printf("4. Find empty land with highest cost\n");
+    printf("5. List all nodes in increasing order of housing cost\n");  // New option
+    printf("6. List all edges with distance and traffic values\n");     // New option
 
-    printf("Enter your choice (1, 2, 3, 4): ");
+    printf("Enter your choice (1-6): ");
 }
 // Function to run Dijkstra's algorithm and display shortest paths
 void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
@@ -694,13 +755,18 @@ int main() {
                 printf("\nEmpty land with highest cost found using AVL tree:\n");
                 findAndDisplayMaxCostEmptyLand(avlTree);
                 break;
-
+            case 5:
+                listAllNodes(&cityGraph);
+                break;
+            case 6:
+                listAllEdges(&cityGraph);
+                break;
             default:
                 printf("Invalid choice. Exiting...\n");
                 return 0;
         }
 
-    } while (choice >= 1 && choice <= 4);  // Continue the loop for valid choices
+    } while (choice >= 1 && choice <= 6);  // Continue the loop for valid choices
 
     return 0;
 }
