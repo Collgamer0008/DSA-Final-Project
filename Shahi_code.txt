@@ -66,12 +66,12 @@ void inputEdgeData(struct Graph *graph) {
 
         for (int i = 0; i < numEdges; ++i) {
             int source, destination, distance;
-            char traffic;
+            char traffic[10];
 
-            scanf("%d %d %d %c", &source, &destination, &distance, &traffic);
+            scanf("%d %d %d %s", &source, &destination, &distance, traffic);
 
-            addEdge(graph, source - 1, destination - 1, distance, traffic);
-            addEdge(graph, destination - 1, source - 1, distance, traffic);  // Make the graph undirected
+            addEdge(graph, source - 1, destination - 1, distance, traffic[0]);
+            addEdge(graph, destination - 1, source - 1, distance, traffic[0]);  // Make the graph undirected
         }
     } else {
         for (int i = 0; i < graph->numNodes; ++i) {
@@ -227,7 +227,6 @@ void displayMenu() {
 int main() {
     struct Graph cityGraph;
     inputNodeData(&cityGraph);
-    inputEdgeData(&cityGraph);
 
     // Check if the graph is connected
     int visited[MAX_NODES] = {0};
@@ -235,6 +234,8 @@ int main() {
         printf("The city is not connected.\n");
         return 0;
     }
+
+    inputEdgeData(&cityGraph);
 
     int dist[MAX_NODES][MAX_NODES];
     int next[MAX_NODES][MAX_NODES];
