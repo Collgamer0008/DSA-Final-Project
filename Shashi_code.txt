@@ -752,6 +752,7 @@ bool hasEmptyLands(struct Graph *graph)
 }
 float calculateAverageHousingCost(struct Graph *graph)
 {
+
     int totalCost = 0;
     int numEmptyLands = 0;
 
@@ -776,6 +777,9 @@ float calculateAverageHousingCost(struct Graph *graph)
 // Updated main function
 int main()
 {
+
+    printf("\n");
+
     struct Graph cityGraph;
     inputNodeData(&cityGraph);
 
@@ -900,28 +904,47 @@ int main()
             break;
         case 3:
             printf("Choose algorithm for finding total distance:\n");
+
             printf("1. Floyd's Algorithm\n");
+
             printf("2. Bellman-Ford Algorithm\n");
+
             printf("Enter your choice (1, 2): ");
+
             int algorithmChoice3;
+
             scanf("%d", &algorithmChoice3);
 
             switch (algorithmChoice3)
             {
             case 1:
+
                 optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+
                 chosenOptimalLocations[2] = optimalLocation;
+
                 break;
+
             case 2:
+
                 printf("Enter the starting node for Bellman-Ford Algorithm: ");
+
                 int bellmanFordStartNode;
+
                 scanf("%d", &bellmanFordStartNode);
+
                 bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+
                 optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+
                 chosenOptimalLocations[2] = optimalLocation;
+
                 break;
+
             default:
+
                 printf("Invalid choice. Exiting...\n");
+
                 return 0;
             }
 
@@ -932,28 +955,45 @@ int main()
             else
             {
                 avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
+
                 printf("\nThe third best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+
                 displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
             }
+
             break;
+
         case 4:
+
             avlTree = buildAVLTree(&cityGraph);
+
             printf("\nEmpty land with highest cost found using AVL tree:\n");
+
             findAndDisplayMaxCostEmptyLand(avlTree);
+
             break;
+
         case 5:
+
             listAllNodes(&cityGraph);
+
             break;
+
         case 6:
+
             listAllEdges(&cityGraph);
+
             break;
 
         case 7:
-            printf("\nAverage Housing Cost (of empty land) in the Area: %.2f\n", calculateAverageHousingCost(&cityGraph));
+
+            printf("\nAverage Housing Cost in the Area: %.2f\n", calculateAverageHousingCost(&cityGraph));
             break;
 
         default:
+
             printf("Invalid choice. Exiting...\n");
+
             return 0;
         }
 
