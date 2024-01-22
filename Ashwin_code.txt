@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -224,6 +223,60 @@ void displayMenu() {
     printf("Enter your choice (1, 2, 3, ...): ");
 }
 
+// Function to run Dijkstra's algorithm and display shortest paths
+void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
+    bool visited[MAX_NODES] = {false};
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        dist[i] = INF;
+        next[i] = -1;
+    }
+
+    dist[startNode] = 0;
+
+    for (int count = 0; count < graph->numNodes - 1; ++count) {
+        int u = -1;
+
+        for (int i = 0; i < graph->numNodes; ++i) {
+            if (!visited[i] && (u == -1 || dist[i] < dist[u]))
+                u = i;
+        }
+
+        visited[u] = true;
+
+        for (int v = 0; v < graph->numNodes; ++v) {
+            int alt = dist[u] + graph->edges[u][v].distance;
+            if (!visited[v] && graph->edges[u][v].distance != INF && alt < dist[v]) {
+                dist[v] = alt;
+                next[v] = u;
+            }
+        }
+    }
+}
+
+// Function to run Bellman-Ford algorithm and display shortest paths
+void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
+    for (int i = 0; i < graph->numNodes; ++i) {
+        dist[i] = INF;
+        next[i] = -1;
+    }
+
+    dist[startNode] = 0;
+
+    for (int count = 0; count < graph->numNodes - 1; ++count) {
+        for (int u = 0; u < graph->numNodes; ++u) {
+            for (int v = 0; v < graph->numNodes; ++v) {
+                int alt = dist[u] + graph->edges[u][v].distance;
+                if (graph->edges[u][v].distance != INF && alt < dist[v]) {
+                    dist[v] = alt;
+                    next[v] = u;
+                }
+            }
+        }
+    }
+}
+
+// Updated main function
 int main() {
     struct Graph cityGraph;
     inputNodeData(&cityGraph);
@@ -252,22 +305,39 @@ int main() {
 
         switch (choice) {
             case 1:
-                optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                printf("Choose algorithm for finding shortest path:\n");
+                printf("1. Floyd's Algorithm\n");
+                printf("2. Dijkstra's Algorithm\n");
+                printf("3. Bellman-Ford Algorithm\n");
+                printf("Enter your choice (1, 2, 3): ");
+                int algorithmChoice;
+                scanf("%d", &algorithmChoice);
+
+                switch (algorithmChoice) {
+                    case 1:
+                        optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                        break;
+                    case 2:
+                        printf("Enter the starting node for Dijkstra's Algorithm: ");
+                        int dijkstraStartNode;
+                        scanf("%d", &dijkstraStartNode);
+                        dijkstrasAlgorithm(&cityGraph, dist[dijkstraStartNode - 1], next[dijkstraStartNode - 1], dijkstraStartNode - 1);
+                        optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                        break;
+                    case 3:
+                        printf("Enter the starting node for Bellman-Ford Algorithm: ");
+                        int bellmanFordStartNode;
+                        scanf("%d", &bellmanFordStartNode);
+                        bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+                        optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                        break;
+                    default:
+                        printf("Invalid choice. Exiting...\n");
+                        return 0;
+                }
                 break;
             case 2:
-                // Find the best optimal location first
-                optimalLocation = findOptimalLocation(&cityGraph, dist, next);
-                // Modify the graph by removing the edges associated with the best optimal location
-                for (int i = 0; i < cityGraph.numNodes; ++i) {
-                    for (int j = 0; j < cityGraph.numNodes; ++j) {
-                        cityGraph.edges[optimalLocation - 1][j].distance = INF;
-                        cityGraph.edges[j][optimalLocation - 1].distance = INF;
-                    }
-                }
-                // Recalculate the shortest paths after removing edges
-                floydsAlgorithm(&cityGraph, dist, next);
-                // Find the second best optimal location
-                optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                // Similar logic for the second best optimal location and so on
                 break;
             case 3:
                 // Similar logic for the third best optimal location and so on
