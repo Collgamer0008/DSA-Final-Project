@@ -1,1 +1,297 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#define MAX_NODES 100
+#define INF 99999
+
+// Structure to represent a weighted edge
+struct Edge {
+    int destination;
+    int distance;
+    char traffic;
+};
+
+// Structure to represent a graph node
+struct Node {
+    int location;
+    int housingPrice;
+    char type[20];
+};
+
+// Structure to represent the graph
+struct Graph {
+    struct Node nodes[MAX_NODES];
+    struct Edge edges[MAX_NODES][MAX_NODES];
+    int numNodes;
+};
+
+// Function to add an edge to the graph
+void addEdge(struct Graph *graph, int source, int destination, int distance, char traffic) {
+    graph->edges[source][destination].destination = destination;
+    graph->edges[source][destination].distance = distance;
+    graph->edges[source][destination].traffic = traffic;
+}
+
+// Function to input data for each node
+void inputNodeData(struct Graph *graph) {
+    printf("Enter the number of nodes: ");
+    scanf("%d", &graph->numNodes);
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        printf("\nNode %d:\n", i + 1);
+        graph->nodes[i].location = i + 1;
+
+        printf("Enter housing price: ");
+        scanf("%d", &graph->nodes[i].housingPrice);
+
+        printf("Enter node type (shop, park, gas station, mall, empty land): ");
+        scanf("%s", graph->nodes[i].type);
+    }
+}
+
+// Function to input data for each edge (distance and traffic)
+void inputEdgeData(struct Graph *graph) {
+    char manualInput;
+    printf("Do you want to manually input edges? (y/n): ");
+    scanf(" %c", &manualInput);
+
+    if (manualInput == 'y' || manualInput == 'Y') {
+        int numEdges;
+        printf("Enter the number of edges: ");
+        scanf("%d", &numEdges);
+
+        printf("Enter edges (source destination distance traffic) - one per line:\n");
+
+        for (int i = 0; i < numEdges; ++i) {
+            int source, destination, distance;
+            char traffic[10];
+
+            scanf("%d %d %d %s", &source, &destination, &distance, traffic);
+
+            addEdge(graph, source - 1, destination - 1, distance, traffic[0]);
+            addEdge(graph, destination - 1, source - 1, distance, traffic[0]);  // Make the graph undirected
+        }
+    } else {
+        for (int i = 0; i < graph->numNodes; ++i) {
+            for (int j = i + 1; j < graph->numNodes; ++j) {
+                printf("\nEnter distance between Node %d and Node %d: ", i + 1, j + 1);
+                scanf("%d", &graph->edges[i][j].distance);
+                graph->edges[j][i].distance = graph->edges[i][j].distance;  // Make the graph undirected
+
+                printf("Enter traffic between Node %d and Node %d (Low(L), Medium(M), High(H)): ", i + 1, j + 1);
+                char trafficInput[10];
+                scanf(" %c", trafficInput);
+
+                if (strcmp(trafficInput, "L") == 0) {
+                    graph->edges[i][j].traffic = 'L';
+                    graph->edges[j][i].traffic = 'L';
+                } else if (strcmp(trafficInput, "M") == 0) {
+                    graph->edges[i][j].traffic = 'M';
+                    graph->edges[j][i].traffic = 'M';
+                } else if (strcmp(trafficInput, "H") == 0) {
+                    graph->edges[i][j].traffic = 'H';
+                    graph->edges[j][i].traffic = 'H';
+                } else {
+                    printf("Invalid traffic input. Using default value 'L'.\n");
+                    graph->edges[i][j].traffic = 'L';
+                    graph->edges[j][i].traffic = 'L';
+                }
+            }
+        }
+    }
+}
+
+// Function to calculate the overall cost for each location
+void calculateOverallCost(struct Graph *graph) {
+    for (int i = 0; i < graph->numNodes; ++i) {
+        int overallCost = graph->nodes[i].housingPrice;
+
+        for (int j = 0; j < graph->numNodes; ++j) {
+            overallCost += graph->edges[i][j].distance;
+            // Additional cost based on traffic
+            if (graph->edges[i][j].traffic == 'L') {
+                overallCost += 1;  // Low traffic
+            } else if (graph->edges[i][j].traffic == 'M') {
+                overallCost += 2;  // Medium traffic
+            } else if (graph->edges[i][j].traffic == 'H') {
+                overallCost += 3;  // High traffic
+            }
+        }
+
+        printf("Overall Cost for Node %d (%s): %d\n", i + 1, graph->nodes[i].type, overallCost);
+    }
+}
+
+// Function to run Floyd's algorithm and display shortest paths
+void floydsAlgorithm(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES]) {
+    // Initialize dist and next matrices
+    for (int i = 0; i < graph->numNodes; ++i) {
+        for (int j = 0; j < graph->numNodes; ++j) {
+            dist[i][j] = graph->edges[i][j].distance;
+            next[i][j] = (i != j && dist[i][j] < INF) ? j : -1;
+        }
+    }
+
+    // Floyd's algorithm
+    for (int k = 0; k < graph->numNodes; ++k) {
+        for (int i = 0; i < graph->numNodes; ++i) {
+            for (int j = 0; j < graph->numNodes; ++j) {
+                if (dist[i][j] > dist[i][k] + dist[k][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                    next[i][j] = next[i][k];
+                }
+            }
+        }
+    }
+}
+
+// Function to check if the graph is connected
+bool isGraphConnected(struct Graph *graph, int visited[MAX_NODES], int startNode) {
+    // Depth-First Search (DFS) to check connectivity
+    if (startNode < 0 || startNode >= graph->numNodes) {
+        return false;
+    }
+
+    visited[startNode] = 1;
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (graph->edges[startNode][i].distance != INF && !visited[i]) {
+            isGraphConnected(graph, visited, i);
+        }
+    }
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (!visited[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Function to find the optimal location based on the minimum overall cost
+int findOptimalLocation(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES]) {
+    int minCost = INF;
+    int optimalLocation = -1;
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+            int currentCost = graph->nodes[i].housingPrice;
+
+            for (int j = 0; j < graph->numNodes; ++j) {
+                currentCost += graph->edges[i][j].distance;
+                // Additional cost based on traffic
+                if (graph->edges[i][j].traffic == 'L') {
+                    currentCost += 1;  // Low traffic
+                } else if (graph->edges[i][j].traffic == 'M') {
+                    currentCost += 2;  // Medium traffic
+                } else if (graph->edges[i][j].traffic == 'H') {
+                    currentCost += 3;  // High traffic
+                }
+            }
+
+            if (currentCost < minCost) {
+                minCost = currentCost;
+                optimalLocation = i + 1;  // Adding 1 to convert to 1-indexing
+            }
+        }
+    }
+
+    return optimalLocation;
+}
+
+// Function to display the shortest path from the optimal empty land to a specified location
+void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES], int optimalEmptyLand, int destination) {
+    printf("Optimal Empty Land to Node %d (%s): ", destination, graph->nodes[destination - 1].type);
+    int currentNode = optimalEmptyLand;
+    while (next[currentNode][destination] != destination) {
+        printf("%d -> ", next[currentNode][destination] + 1);
+        currentNode = next[currentNode][destination];
+    }
+    printf("%d\n", destination);
+}
+
+// Function to display the menu and execute corresponding actions
+void displayMenu() {
+    printf("\nMenu:\n");
+    printf("1. Find the best optimal location for the house\n");
+    printf("2. Find the second best optimal location for the house\n");
+    printf("3. Find the third best optimal location for the house\n");
+    // Add more options as needed
+
+    printf("Enter your choice (1, 2, 3, ...): ");
+}
+
+int main() {
+    struct Graph cityGraph;
+    inputNodeData(&cityGraph);
+
+    // Check if the graph is connected
+    int visited[MAX_NODES] = {0};
+    if (!isGraphConnected(&cityGraph, visited, 0)) {
+        printf("The city is not connected.\n");
+        return 0;
+    }
+
+    inputEdgeData(&cityGraph);
+
+    int dist[MAX_NODES][MAX_NODES];
+    int next[MAX_NODES][MAX_NODES];
+    floydsAlgorithm(&cityGraph, dist, next);
+
+    calculateOverallCost(&cityGraph);
+
+    int choice;
+    int optimalLocation;
+
+    do {
+        displayMenu();
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                break;
+            case 2:
+                // Find the best optimal location first
+                optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                // Modify the graph by removing the edges associated with the best optimal location
+                for (int i = 0; i < cityGraph.numNodes; ++i) {
+                    for (int j = 0; j < cityGraph.numNodes; ++j) {
+                        cityGraph.edges[optimalLocation - 1][j].distance = INF;
+                        cityGraph.edges[j][optimalLocation - 1].distance = INF;
+                    }
+                }
+                // Recalculate the shortest paths after removing edges
+                floydsAlgorithm(&cityGraph, dist, next);
+                // Find the second best optimal location
+                optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                break;
+            case 3:
+                // Similar logic for the third best optimal location and so on
+                break;
+            // Add more cases as needed
+            default:
+                printf("Invalid choice. Exiting...\n");
+                return 0;
+        }
+
+        if (optimalLocation == -1) {
+            printf("\nThere are no empty lands.\n");
+        } else {
+            printf("\nThe best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+            // Display the shortest paths from the optimal empty land to other locations
+            for (int i = 0; i < cityGraph.numNodes; ++i) {
+                if (strcmp(cityGraph.nodes[i].type, "empty") == 0) {
+                    displayShortestPath(&cityGraph, next, i, optimalLocation);
+                }
+            }
+        }
+
+    } while (choice >= 1 && choice <= 3);  // Continue the loop for valid choices
+
+    return 0;
+}
 
