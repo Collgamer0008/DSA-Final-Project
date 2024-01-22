@@ -6,48 +6,68 @@
 #define INF 99999
 
 // Structure to represent a weighted edge
-struct Edge {
+struct Edge
+{
     int destination;
     int distance;
     char traffic;
 };
 
 // Structure to represent a graph node
-struct Node {
+struct Node
+{
     int location;
     int housingPrice;
     char type[20];
+    int subtreeCount; // Count of nodes in the subtree rooted at this node
+    int subtreeSum;   // Sum of housing prices in the subtree rooted at this node
 };
 
 // Structure to represent the graph
-struct Graph {
+struct Graph
+{
     struct Node nodes[MAX_NODES];
     struct Edge edges[MAX_NODES][MAX_NODES];
     int numNodes;
 };
 
-//AVL tree
-struct AVLNode {
+// AVL tree
+struct AVLNode
+{
     struct Node *data;
     int height;
+    int subtreeCount;
+    int subtreeSum;
     struct AVLNode *left;
     struct AVLNode *right;
 };
 
+struct SegmentTreeNode
+{
+    int left, right;
+    int sum;
+    int count;
+};
+
 // Function to get the height of an AVL tree node
-int getHeight(struct AVLNode *node) {
-    if (node == NULL) return 0;
+int getHeight(struct AVLNode *node)
+{
+    if (node == NULL)
+        return 0;
     return node->height;
 }
 
 // Function to get the balance factor of an AVL tree node
-int getBalance(struct AVLNode *node) {
-    if (node == NULL) return 0;
+int getBalance(struct AVLNode *node)
+{
+    if (node == NULL)
+        return 0;
     return getHeight(node->left) - getHeight(node->right);
 }
 
 // Function to perform a right rotation in AVL tree
-struct AVLNode *rightRotate(struct AVLNode *y) {
+struct AVLNode *rightRotate(struct AVLNode *y)
+{
     struct AVLNode *x = y->left;
     struct AVLNode *T2 = x->right;
 
@@ -63,7 +83,8 @@ struct AVLNode *rightRotate(struct AVLNode *y) {
 }
 
 // Function to perform a left rotation in AVL tree
-struct AVLNode *leftRotate(struct AVLNode *x) {
+struct AVLNode *leftRotate(struct AVLNode *x)
+{
     struct AVLNode *y = x->right;
     struct AVLNode *T2 = y->left;
 
@@ -79,8 +100,10 @@ struct AVLNode *leftRotate(struct AVLNode *x) {
 }
 
 // Function to insert a node into AVL tree
-struct AVLNode *insertAVL(struct AVLNode *root, struct Node *data) {
-    if (root == NULL) {
+struct AVLNode *insertAVL(struct AVLNode *root, struct Node *data)
+{
+    if (root == NULL)
+    {
         struct AVLNode *newNode = (struct AVLNode *)malloc(sizeof(struct AVLNode));
         newNode->data = data;
         newNode->left = newNode->right = NULL;
@@ -110,41 +133,53 @@ struct AVLNode *insertAVL(struct AVLNode *root, struct Node *data) {
         return leftRotate(root);
 
     // Left Right Case
-    if (balance > 1 && data->housingPrice > root->left->data->housingPrice) {
+    if (balance > 1 && data->housingPrice > root->left->data->housingPrice)
+    {
         root->left = leftRotate(root->left);
         return rightRotate(root);
     }
 
     // Right Left Case
-    if (balance < -1 && data->housingPrice < root->right->data->housingPrice) {
+    if (balance < -1 && data->housingPrice < root->right->data->housingPrice)
+    {
         root->right = rightRotate(root->right);
         return leftRotate(root);
     }
+
+    root->subtreeCount++;
+    root->subtreeSum += data->housingPrice;
 
     return root;
 }
 
 // Function to find the node with the maximum value in AVL tree
-struct AVLNode *findMaxAVL(struct AVLNode *root) {
+struct AVLNode *findMaxAVL(struct AVLNode *root)
+{
     while (root->right != NULL)
         root = root->right;
     return root;
 }
 
 // Function to delete a node from AVL tree
-struct AVLNode *deleteNodeAVL(struct AVLNode *root, int housingPrice) {
-    if (root == NULL) return root;
+struct AVLNode *deleteNodeAVL(struct AVLNode *root, int housingPrice)
+{
+    if (root == NULL)
+        return root;
 
     if (housingPrice < root->data->housingPrice)
         root->left = deleteNodeAVL(root->left, housingPrice);
     else if (housingPrice > root->data->housingPrice)
         root->right = deleteNodeAVL(root->right, housingPrice);
-    else {
-        if (root->left == NULL) {
+    else
+    {
+        if (root->left == NULL)
+        {
             struct AVLNode *temp = root->right;
             free(root);
             return temp;
-        } else if (root->right == NULL) {
+        }
+        else if (root->right == NULL)
+        {
             struct AVLNode *temp = root->left;
             free(root);
             return temp;
@@ -166,7 +201,8 @@ struct AVLNode *deleteNodeAVL(struct AVLNode *root, int housingPrice) {
         return rightRotate(root);
 
     // Left Right Case
-    if (balance > 1 && getBalance(root->left) < 0) {
+    if (balance > 1 && getBalance(root->left) < 0)
+    {
         root->left = leftRotate(root->left);
         return rightRotate(root);
     }
@@ -176,27 +212,36 @@ struct AVLNode *deleteNodeAVL(struct AVLNode *root, int housingPrice) {
         return leftRotate(root);
 
     // Right Left Case
-    if (balance < -1 && getBalance(root->right) > 0) {
+    if (balance < -1 && getBalance(root->right) > 0)
+    {
         root->right = rightRotate(root->right);
         return leftRotate(root);
     }
+
+    root->subtreeCount--;
+    root->subtreeSum -= housingPrice;
 
     return root;
 }
 
 // Function to display the AVL tree in-order
-void inOrderTraversal(struct AVLNode *root) {
-    if (root != NULL) {
+void inOrderTraversal(struct AVLNode *root)
+{
+    if (root != NULL)
+    {
         inOrderTraversal(root->left);
         printf("Node %d: Housing Price = %d\n", root->data->location, root->data->housingPrice);
         inOrderTraversal(root->right);
     }
 }
 
-struct AVLNode *buildAVLTree(struct Graph *graph) {
+struct AVLNode *buildAVLTree(struct Graph *graph)
+{
     struct AVLNode *avlTree = NULL;
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (strcmp(graph->nodes[i].type, "empty") == 0)
+        {
             avlTree = insertAVL(avlTree, &graph->nodes[i]);
         }
     }
@@ -204,8 +249,10 @@ struct AVLNode *buildAVLTree(struct Graph *graph) {
 }
 
 // Function to find and display empty land with the highest cost using AVL tree
-void findAndDisplayMaxCostEmptyLand(struct AVLNode *root) {
-    if (root == NULL) {
+void findAndDisplayMaxCostEmptyLand(struct AVLNode *root)
+{
+    if (root == NULL)
+    {
         printf("No empty lands in AVL tree.\n");
         return;
     }
@@ -219,35 +266,48 @@ void findAndDisplayMaxCostEmptyLand(struct AVLNode *root) {
 int chosenOptimalLocations[MAX_NODES];
 
 // Function to find the optimal location excluding already chosen optimal locations
-int findOptimalLocationExcluding(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES], int excludedLocations[MAX_NODES]) {
+int findOptimalLocationExcluding(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES], int excludedLocations[MAX_NODES])
+{
     int minCost = INF;
     int optimalLocation = -1;
 
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (strcmp(graph->nodes[i].type, "empty") == 0)
+        {
             int alreadyChosen = 0;
-            for (int j = 0; j < MAX_NODES; ++j) {
-                if (excludedLocations[j] == i + 1) {
+            for (int j = 0; j < MAX_NODES; ++j)
+            {
+                if (excludedLocations[j] == i + 1)
+                {
                     alreadyChosen = 1;
                     break;
                 }
             }
 
-            if (!alreadyChosen) {
+            if (!alreadyChosen)
+            {
                 int currentCost = graph->nodes[i].housingPrice;
 
-                for (int j = 0; j < graph->numNodes; ++j) {
+                for (int j = 0; j < graph->numNodes; ++j)
+                {
                     currentCost += dist[i][j];
-                    if (graph->edges[i][j].traffic == 'L') {
+                    if (graph->edges[i][j].traffic == 'L')
+                    {
                         currentCost += 1;
-                    } else if (graph->edges[i][j].traffic == 'M') {
+                    }
+                    else if (graph->edges[i][j].traffic == 'M')
+                    {
                         currentCost += 2;
-                    } else if (graph->edges[i][j].traffic == 'H') {
+                    }
+                    else if (graph->edges[i][j].traffic == 'H')
+                    {
                         currentCost += 3;
                     }
                 }
 
-                if (currentCost < minCost) {
+                if (currentCost < minCost)
+                {
                     minCost = currentCost;
                     optimalLocation = i + 1;
                 }
@@ -259,18 +319,21 @@ int findOptimalLocationExcluding(struct Graph *graph, int dist[MAX_NODES][MAX_NO
 }
 
 // Function to add an edge to the graph
-void addEdge(struct Graph *graph, int source, int destination, int distance, char traffic) {
+void addEdge(struct Graph *graph, int source, int destination, int distance, char traffic)
+{
     graph->edges[source][destination].destination = destination;
     graph->edges[source][destination].distance = distance;
     graph->edges[source][destination].traffic = traffic;
 }
 
 // Function to input data for each node
-void inputNodeData(struct Graph *graph) {
+void inputNodeData(struct Graph *graph)
+{
     printf("Enter the number of nodes: ");
     scanf("%d", &graph->numNodes);
 
-    for (int i = 0; i < graph->numNodes; ++i) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
         printf("\nNode %d:\n", i + 1);
         graph->nodes[i].location = i + 1;
 
@@ -283,48 +346,62 @@ void inputNodeData(struct Graph *graph) {
 }
 
 // Function to input data for each edge (distance and traffic)
-void inputEdgeData(struct Graph *graph) {
+void inputEdgeData(struct Graph *graph)
+{
     char manualInput;
     printf("Do you want to manually input edges? (y/n): ");
     scanf(" %c", &manualInput);
 
-    if (manualInput == 'y' || manualInput == 'Y') {
+    if (manualInput == 'y' || manualInput == 'Y')
+    {
         int numEdges;
         printf("Enter the number of edges: ");
         scanf("%d", &numEdges);
 
         printf("Enter edges (source destination distance traffic) - one per line:\n");
 
-        for (int i = 0; i < numEdges; ++i) {
+        for (int i = 0; i < numEdges; ++i)
+        {
             int source, destination, distance;
             char traffic[10];
 
             scanf("%d %d %d %s", &source, &destination, &distance, traffic);
 
             addEdge(graph, source - 1, destination - 1, distance, traffic[0]);
-            addEdge(graph, destination - 1, source - 1, distance, traffic[0]);  // Make the graph undirected
+            addEdge(graph, destination - 1, source - 1, distance, traffic[0]); // Make the graph undirected
         }
-    } else {
-        for (int i = 0; i < graph->numNodes; ++i) {
-            for (int j = i + 1; j < graph->numNodes; ++j) {
+    }
+    else
+    {
+        for (int i = 0; i < graph->numNodes; ++i)
+        {
+            for (int j = i + 1; j < graph->numNodes; ++j)
+            {
                 printf("\nEnter distance between Node %d and Node %d: ", i + 1, j + 1);
                 scanf("%d", &graph->edges[i][j].distance);
-                graph->edges[j][i].distance = graph->edges[i][j].distance;  // Make the graph undirected
+                graph->edges[j][i].distance = graph->edges[i][j].distance; // Make the graph undirected
 
                 printf("Enter traffic between Node %d and Node %d (Low(L), Medium(M), High(H)): ", i + 1, j + 1);
                 char trafficInput[10];
                 scanf(" %c", trafficInput);
 
-                if (strcmp(trafficInput, "L") == 0) {
+                if (strcmp(trafficInput, "L") == 0)
+                {
                     graph->edges[i][j].traffic = 'L';
                     graph->edges[j][i].traffic = 'L';
-                } else if (strcmp(trafficInput, "M") == 0) {
+                }
+                else if (strcmp(trafficInput, "M") == 0)
+                {
                     graph->edges[i][j].traffic = 'M';
                     graph->edges[j][i].traffic = 'M';
-                } else if (strcmp(trafficInput, "H") == 0) {
+                }
+                else if (strcmp(trafficInput, "H") == 0)
+                {
                     graph->edges[i][j].traffic = 'H';
                     graph->edges[j][i].traffic = 'H';
-                } else {
+                }
+                else
+                {
                     printf("Invalid traffic input. Using default value 'L'.\n");
                     graph->edges[i][j].traffic = 'L';
                     graph->edges[j][i].traffic = 'L';
@@ -335,19 +412,27 @@ void inputEdgeData(struct Graph *graph) {
 }
 
 // Function to calculate the overall cost for each location
-void calculateOverallCost(struct Graph *graph) {
-    for (int i = 0; i < graph->numNodes; ++i) {
+void calculateOverallCost(struct Graph *graph)
+{
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
         int overallCost = graph->nodes[i].housingPrice;
 
-        for (int j = 0; j < graph->numNodes; ++j) {
+        for (int j = 0; j < graph->numNodes; ++j)
+        {
             overallCost += graph->edges[i][j].distance;
             // Additional cost based on traffic
-            if (graph->edges[i][j].traffic == 'L') {
-                overallCost += 1;  // Low traffic
-            } else if (graph->edges[i][j].traffic == 'M') {
-                overallCost += 2;  // Medium traffic
-            } else if (graph->edges[i][j].traffic == 'H') {
-                overallCost += 3;  // High traffic
+            if (graph->edges[i][j].traffic == 'L')
+            {
+                overallCost += 1; // Low traffic
+            }
+            else if (graph->edges[i][j].traffic == 'M')
+            {
+                overallCost += 2; // Medium traffic
+            }
+            else if (graph->edges[i][j].traffic == 'H')
+            {
+                overallCost += 3; // High traffic
             }
         }
 
@@ -356,20 +441,27 @@ void calculateOverallCost(struct Graph *graph) {
 }
 
 // Function to run Floyd's algorithm and display shortest paths
-void floydsAlgorithm(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES]) {
+void floydsAlgorithm(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES])
+{
     // Initialize dist and next matrices
-    for (int i = 0; i < graph->numNodes; ++i) {
-        for (int j = 0; j < graph->numNodes; ++j) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        for (int j = 0; j < graph->numNodes; ++j)
+        {
             dist[i][j] = graph->edges[i][j].distance;
             next[i][j] = (i != j && dist[i][j] < INF) ? j : -1;
         }
     }
 
     // Floyd's algorithm
-    for (int k = 0; k < graph->numNodes; ++k) {
-        for (int i = 0; i < graph->numNodes; ++i) {
-            for (int j = 0; j < graph->numNodes; ++j) {
-                if (dist[i][j] > dist[i][k] + dist[k][j]) {
+    for (int k = 0; k < graph->numNodes; ++k)
+    {
+        for (int i = 0; i < graph->numNodes; ++i)
+        {
+            for (int j = 0; j < graph->numNodes; ++j)
+            {
+                if (dist[i][j] > dist[i][k] + dist[k][j])
+                {
                     dist[i][j] = dist[i][k] + dist[k][j];
                     next[i][j] = next[i][k];
                 }
@@ -379,22 +471,28 @@ void floydsAlgorithm(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int ne
 }
 
 // Function to check if the graph is connected
-bool isGraphConnected(struct Graph *graph, int visited[MAX_NODES], int startNode) {
+bool isGraphConnected(struct Graph *graph, int visited[MAX_NODES], int startNode)
+{
     // Depth-First Search (DFS) to check connectivity
-    if (startNode < 0 || startNode >= graph->numNodes) {
+    if (startNode < 0 || startNode >= graph->numNodes)
+    {
         return false;
     }
 
     visited[startNode] = 1;
 
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (graph->edges[startNode][i].distance != INF && !visited[i]) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (graph->edges[startNode][i].distance != INF && !visited[i])
+        {
             isGraphConnected(graph, visited, i);
         }
     }
 
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (!visited[i]) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (!visited[i])
+        {
             return false;
         }
     }
@@ -403,29 +501,39 @@ bool isGraphConnected(struct Graph *graph, int visited[MAX_NODES], int startNode
 }
 
 // Function to find the optimal location based on the minimum overall cost
-int findOptimalLocation(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES]) {
+int findOptimalLocation(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES])
+{
     int minCost = INF;
     int optimalLocation = -1;
 
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (strcmp(graph->nodes[i].type, "empty") == 0)
+        {
             int currentCost = graph->nodes[i].housingPrice;
 
-            for (int j = 0; j < graph->numNodes; ++j) {
+            for (int j = 0; j < graph->numNodes; ++j)
+            {
                 currentCost += graph->edges[i][j].distance;
                 // Additional cost based on traffic
-                if (graph->edges[i][j].traffic == 'L') {
-                    currentCost += 1;  // Low traffic
-                } else if (graph->edges[i][j].traffic == 'M') {
-                    currentCost += 2;  // Medium traffic
-                } else if (graph->edges[i][j].traffic == 'H') {
-                    currentCost += 3;  // High traffic
+                if (graph->edges[i][j].traffic == 'L')
+                {
+                    currentCost += 1; // Low traffic
+                }
+                else if (graph->edges[i][j].traffic == 'M')
+                {
+                    currentCost += 2; // Medium traffic
+                }
+                else if (graph->edges[i][j].traffic == 'H')
+                {
+                    currentCost += 3; // High traffic
                 }
             }
 
-            if (currentCost < minCost) {
+            if (currentCost < minCost)
+            {
                 minCost = currentCost;
-                optimalLocation = i + 1;  // Adding 1 to convert to 1-indexing
+                optimalLocation = i + 1; // Adding 1 to convert to 1-indexing
             }
         }
     }
@@ -433,7 +541,8 @@ int findOptimalLocation(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int
     return optimalLocation;
 }
 
-void heapify(struct Node arr[], int n, int i) {
+void heapify(struct Node arr[], int n, int i)
+{
     int largest = i;
     int left = 2 * i + 1;
     int right = 2 * i + 2;
@@ -444,7 +553,8 @@ void heapify(struct Node arr[], int n, int i) {
     if (right < n && arr[right].housingPrice > arr[largest].housingPrice)
         largest = right;
 
-    if (largest != i) {
+    if (largest != i)
+    {
         struct Node temp = arr[i];
         arr[i] = arr[largest];
         arr[largest] = temp;
@@ -453,11 +563,13 @@ void heapify(struct Node arr[], int n, int i) {
     }
 }
 
-void heapSort(struct Node arr[], int n) {
+void heapSort(struct Node arr[], int n)
+{
     for (int i = n / 2 - 1; i >= 0; i--)
         heapify(arr, n, i);
 
-    for (int i = n - 1; i > 0; i--) {
+    for (int i = n - 1; i > 0; i--)
+    {
         struct Node temp = arr[0];
         arr[0] = arr[i];
         arr[i] = temp;
@@ -467,25 +579,31 @@ void heapSort(struct Node arr[], int n) {
 }
 
 // Function to list all nodes in increasing order of housing cost
-void listAllNodes(struct Graph *graph) {
+void listAllNodes(struct Graph *graph)
+{
     struct Node sortedNodes[MAX_NODES];
-    for (int i = 0; i < graph->numNodes; ++i) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
         sortedNodes[i] = graph->nodes[i];
     }
 
     heapSort(sortedNodes, graph->numNodes);
 
     printf("\nList of All Nodes in Increasing Order of Housing Cost:\n");
-    for (int i = 0; i < graph->numNodes; ++i) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
         printf("Node %d: Housing Price = %d\n", sortedNodes[i].location, sortedNodes[i].housingPrice);
     }
 }
 
 // Function to list all edges with distance and traffic values
-void listAllEdges(struct Graph *graph) {
+void listAllEdges(struct Graph *graph)
+{
     printf("\nList of All Edges with Distance and Traffic Values:\n");
-    for (int i = 0; i < graph->numNodes; ++i) {
-        for (int j = i + 1; j < graph->numNodes; ++j) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        for (int j = i + 1; j < graph->numNodes; ++j)
+        {
             printf("Edge between Node %d and Node %d: Distance = %d, Traffic = %c\n", i + 1, j + 1,
                    graph->edges[i][j].distance, graph->edges[i][j].traffic);
         }
@@ -493,10 +611,12 @@ void listAllEdges(struct Graph *graph) {
 }
 
 // Function to display the shortest path from the optimal empty land to a specified location
-void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES], int optimalEmptyLand, int destination) {
+void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES], int optimalEmptyLand, int destination)
+{
     printf("Optimal Empty Land to Node %d (%s): ", destination, graph->nodes[destination - 1].type);
     int currentNode = optimalEmptyLand;
-    while (next[currentNode][destination] != destination) {
+    while (next[currentNode][destination] != destination)
+    {
         printf("%d -> ", next[currentNode][destination] + 1);
         currentNode = next[currentNode][destination];
     }
@@ -504,41 +624,51 @@ void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES], in
 }
 
 // Function to display the menu and execute corresponding actions
-void displayMenu() {
+// Updated menu
+void displayMenu()
+{
     printf("\nMenu:\n");
     printf("1. Find the best optimal location for the house\n");
     printf("2. Find the second best optimal location for the house\n");
     printf("3. Find the third best optimal location for the house\n");
-    printf("4. Find empty land with highest cost\n");
-    printf("5. List all nodes in increasing order of housing cost\n");  // New option
-    printf("6. List all edges with distance and traffic values\n");     // New option
+    printf("4. Find empty land with the highest cost\n");
+    printf("5. List all nodes in increasing order of housing cost\n");
+    printf("6. List all edges with distance and traffic values\n");
+    printf("7. Calculate average housing cost in the area\n"); // New option
 
-    printf("Enter your choice (1-6): ");
+    printf("Enter your choice (1-7): ");
 }
+
 // Function to run Dijkstra's algorithm and display shortest paths
-void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
+void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode)
+{
     bool visited[MAX_NODES] = {false};
 
-    for (int i = 0; i < graph->numNodes; ++i) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
         dist[i] = INF;
         next[i] = -1;
     }
 
     dist[startNode] = 0;
 
-    for (int count = 0; count < graph->numNodes - 1; ++count) {
+    for (int count = 0; count < graph->numNodes - 1; ++count)
+    {
         int u = -1;
 
-        for (int i = 0; i < graph->numNodes; ++i) {
+        for (int i = 0; i < graph->numNodes; ++i)
+        {
             if (!visited[i] && (u == -1 || dist[i] < dist[u]))
                 u = i;
         }
 
         visited[u] = true;
 
-        for (int v = 0; v < graph->numNodes; ++v) {
+        for (int v = 0; v < graph->numNodes; ++v)
+        {
             int alt = dist[u] + graph->edges[u][v].distance;
-            if (!visited[v] && graph->edges[u][v].distance != INF && alt < dist[v]) {
+            if (!visited[v] && graph->edges[u][v].distance != INF && alt < dist[v])
+            {
                 dist[v] = alt;
                 next[v] = u;
             }
@@ -547,19 +677,25 @@ void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_N
 }
 
 // Function to run Bellman-Ford algorithm and display shortest paths
-void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
-    for (int i = 0; i < graph->numNodes; ++i) {
+void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode)
+{
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
         dist[i] = INF;
         next[i] = -1;
     }
 
     dist[startNode] = 0;
 
-    for (int count = 0; count < graph->numNodes - 1; ++count) {
-        for (int u = 0; u < graph->numNodes; ++u) {
-            for (int v = 0; v < graph->numNodes; ++v) {
+    for (int count = 0; count < graph->numNodes - 1; ++count)
+    {
+        for (int u = 0; u < graph->numNodes; ++u)
+        {
+            for (int v = 0; v < graph->numNodes; ++v)
+            {
                 int alt = dist[u] + graph->edges[u][v].distance;
-                if (graph->edges[u][v].distance != INF && alt < dist[v]) {
+                if (graph->edges[u][v].distance != INF && alt < dist[v])
+                {
                     dist[v] = alt;
                     next[v] = u;
                 }
@@ -569,11 +705,14 @@ void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX
 }
 
 // Updated main function
-void displayShortestDistances(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimalNode) {
+void displayShortestDistances(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimalNode)
+{
     printf("\nTotal Distance from Optimal Node to Other Nodes:\n");
 
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (i != optimalNode) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (i != optimalNode)
+        {
             printf("Optimal Node to Node %d (%s): ", i + 1, graph->nodes[i].type);
 
             // Display the total distance
@@ -583,11 +722,14 @@ void displayShortestDistances(struct Graph *graph, int dist[MAX_NODES][MAX_NODES
 }
 
 // Updated main function
-void displayTotalDistanceFromOptimal(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimalNode) {
+void displayTotalDistanceFromOptimal(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimalNode)
+{
     printf("\nTotal Distance from Optimal Node to Other Nodes:\n");
 
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (i != optimalNode && strcmp(graph->nodes[i].type, "empty") == 0) {
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (i != optimalNode && strcmp(graph->nodes[i].type, "empty") == 0)
+        {
             printf("Optimal Node to Node %d (%s): ", i + 1, graph->nodes[i].type);
 
             // Display the total distance
@@ -597,23 +739,50 @@ void displayTotalDistanceFromOptimal(struct Graph *graph, int dist[MAX_NODES][MA
 }
 
 // Function to check if there are any empty lands left
-bool hasEmptyLands(struct Graph *graph) {
-    for (int i = 0; i < graph->numNodes; ++i) {
-        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+bool hasEmptyLands(struct Graph *graph)
+{
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (strcmp(graph->nodes[i].type, "empty") == 0)
+        {
             return true;
         }
     }
     return false;
 }
+float calculateAverageHousingCost(struct Graph *graph)
+{
+    int totalCost = 0;
+    int numEmptyLands = 0;
+
+    for (int i = 0; i < graph->numNodes; ++i)
+    {
+        if (strcmp(graph->nodes[i].type, "empty") == 0)
+        {
+            totalCost += graph->nodes[i].housingPrice;
+            numEmptyLands++;
+        }
+    }
+
+    if (numEmptyLands == 0)
+    {
+        printf("No empty lands in the area.\n");
+        return 0.0;
+    }
+
+    return (float)totalCost / numEmptyLands;
+}
 
 // Updated main function
-int main() {
+int main()
+{
     struct Graph cityGraph;
     inputNodeData(&cityGraph);
 
     // Check if the graph is connected
     int visited[MAX_NODES] = {0};
-    if (!isGraphConnected(&cityGraph, visited, 0)) {
+    if (!isGraphConnected(&cityGraph, visited, 0))
+    {
         printf("The city is not connected.\n");
         return 0;
     }
@@ -622,7 +791,7 @@ int main() {
 
     int dist[MAX_NODES][MAX_NODES];
     int next[MAX_NODES][MAX_NODES];
-    floydsAlgorithm(&cityGraph, dist, next);  // Initialize next array with Floyd's algorithm
+    floydsAlgorithm(&cityGraph, dist, next); // Initialize next array with Floyd's algorithm
 
     calculateOverallCost(&cityGraph);
 
@@ -630,143 +799,165 @@ int main() {
     int optimalLocation;
 
     // Initialize the 'next' array before entering the loop
-    for (int i = 0; i < MAX_NODES; ++i) {
-        for (int j = 0; j < MAX_NODES; ++j) {
+    for (int i = 0; i < MAX_NODES; ++i)
+    {
+        for (int j = 0; j < MAX_NODES; ++j)
+        {
             next[i][j] = -1;
         }
     }
 
     int chosenOptimalLocations[MAX_NODES];
-    for (int i = 0; i < MAX_NODES; ++i) {
+    for (int i = 0; i < MAX_NODES; ++i)
+    {
         chosenOptimalLocations[i] = -1;
     }
 
     struct AVLNode *avlTree = NULL;
 
-    do {
+    do
+    {
         displayMenu();
         scanf("%d", &choice);
 
-        switch (choice) {
+        switch (choice)
+        {
+        case 1:
+            printf("Choose algorithm for finding total distance:\n");
+            printf("1. Floyd's Algorithm\n");
+            printf("2. Bellman-Ford Algorithm\n");
+            printf("Enter your choice (1, 2): ");
+            int algorithmChoice1;
+            scanf("%d", &algorithmChoice1);
+
+            switch (algorithmChoice1)
+            {
             case 1:
-                printf("Choose algorithm for finding total distance:\n");
-                printf("1. Floyd's Algorithm\n");
-                printf("2. Bellman-Ford Algorithm\n");
-                printf("Enter your choice (1, 2): ");
-                int algorithmChoice1;
-                scanf("%d", &algorithmChoice1);
-
-                switch (algorithmChoice1) {
-                    case 1:
-                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
-                        chosenOptimalLocations[0] = optimalLocation;
-                        break;
-                    case 2:
-                        printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                        int bellmanFordStartNode;
-                        scanf("%d", &bellmanFordStartNode);
-                        bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
-                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
-                        chosenOptimalLocations[0] = optimalLocation;
-                        break;
-                    default:
-                        printf("Invalid choice. Exiting...\n");
-                        return 0;
-                }
-
-                if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
-                    printf("\nThere are no empty lands.\n");
-                } else {
-                    avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
-                    printf("\nThe best optimal location for the house is Node %d (empty land).\n", optimalLocation);
-                    displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
-                }
+                optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                chosenOptimalLocations[0] = optimalLocation;
                 break;
             case 2:
-                printf("Choose algorithm for finding total distance:\n");
-                printf("1. Floyd's Algorithm\n");
-                printf("2. Bellman-Ford Algorithm\n");
-                printf("Enter your choice (1, 2): ");
-                int algorithmChoice2;
-                scanf("%d", &algorithmChoice2);
-
-                switch (algorithmChoice2) {
-                    case 1:
-                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
-                        chosenOptimalLocations[1] = optimalLocation;
-                        break;
-                    case 2:
-                        printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                        int bellmanFordStartNode;
-                        scanf("%d", &bellmanFordStartNode);
-                        bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
-                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
-                        chosenOptimalLocations[1] = optimalLocation;
-                        break;
-                    default:
-                        printf("Invalid choice. Exiting...\n");
-                        return 0;
-                }
-
-                if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
-                    printf("\nThere are no empty lands.\n");
-                } else {
-                    avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
-                    printf("\nThe second best optimal location for the house is Node %d (empty land).\n", optimalLocation);
-                    displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
-                }
-                break;
-            case 3:
-                printf("Choose algorithm for finding total distance:\n");
-                printf("1. Floyd's Algorithm\n");
-                printf("2. Bellman-Ford Algorithm\n");
-                printf("Enter your choice (1, 2): ");
-                int algorithmChoice3;
-                scanf("%d", &algorithmChoice3);
-
-                switch (algorithmChoice3) {
-                    case 1:
-                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
-                        chosenOptimalLocations[2] = optimalLocation;
-                        break;
-                    case 2:
-                        printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                        int bellmanFordStartNode;
-                        scanf("%d", &bellmanFordStartNode);
-                        bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
-                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
-                        chosenOptimalLocations[2] = optimalLocation;
-                        break;
-                    default:
-                        printf("Invalid choice. Exiting...\n");
-                        return 0;
-                }
-
-                if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
-                    printf("\nThere are no empty lands.\n");
-                } else {
-                    avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
-                    printf("\nThe third best optimal location for the house is Node %d (empty land).\n", optimalLocation);
-                    displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
-                }
-                break;
-            case 4:
-                avlTree = buildAVLTree(&cityGraph);
-                printf("\nEmpty land with highest cost found using AVL tree:\n");
-                findAndDisplayMaxCostEmptyLand(avlTree);
-                break;
-            case 5:
-                listAllNodes(&cityGraph);
-                break;
-            case 6:
-                listAllEdges(&cityGraph);
+                printf("Enter the starting node for Bellman-Ford Algorithm: ");
+                int bellmanFordStartNode;
+                scanf("%d", &bellmanFordStartNode);
+                bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+                optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                chosenOptimalLocations[0] = optimalLocation;
                 break;
             default:
                 printf("Invalid choice. Exiting...\n");
                 return 0;
+            }
+
+            if (optimalLocation == -1 || !hasEmptyLands(&cityGraph))
+            {
+                printf("\nThere are no empty lands.\n");
+            }
+            else
+            {
+                avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
+                printf("\nThe best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+                displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
+            }
+            break;
+        case 2:
+            printf("Choose algorithm for finding total distance:\n");
+            printf("1. Floyd's Algorithm\n");
+            printf("2. Bellman-Ford Algorithm\n");
+            printf("Enter your choice (1, 2): ");
+            int algorithmChoice2;
+            scanf("%d", &algorithmChoice2);
+
+            switch (algorithmChoice2)
+            {
+            case 1:
+                optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                chosenOptimalLocations[1] = optimalLocation;
+                break;
+            case 2:
+                printf("Enter the starting node for Bellman-Ford Algorithm: ");
+                int bellmanFordStartNode;
+                scanf("%d", &bellmanFordStartNode);
+                bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+                optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                chosenOptimalLocations[1] = optimalLocation;
+                break;
+            default:
+                printf("Invalid choice. Exiting...\n");
+                return 0;
+            }
+
+            if (optimalLocation == -1 || !hasEmptyLands(&cityGraph))
+            {
+                printf("\nThere are no empty lands.\n");
+            }
+            else
+            {
+                avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
+                printf("\nThe second best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+                displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
+            }
+            break;
+        case 3:
+            printf("Choose algorithm for finding total distance:\n");
+            printf("1. Floyd's Algorithm\n");
+            printf("2. Bellman-Ford Algorithm\n");
+            printf("Enter your choice (1, 2): ");
+            int algorithmChoice3;
+            scanf("%d", &algorithmChoice3);
+
+            switch (algorithmChoice3)
+            {
+            case 1:
+                optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                chosenOptimalLocations[2] = optimalLocation;
+                break;
+            case 2:
+                printf("Enter the starting node for Bellman-Ford Algorithm: ");
+                int bellmanFordStartNode;
+                scanf("%d", &bellmanFordStartNode);
+                bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+                optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                chosenOptimalLocations[2] = optimalLocation;
+                break;
+            default:
+                printf("Invalid choice. Exiting...\n");
+                return 0;
+            }
+
+            if (optimalLocation == -1 || !hasEmptyLands(&cityGraph))
+            {
+                printf("\nThere are no empty lands.\n");
+            }
+            else
+            {
+                avlTree = insertAVL(avlTree, &cityGraph.nodes[optimalLocation - 1]);
+                printf("\nThe third best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+                displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
+            }
+            break;
+        case 4:
+            avlTree = buildAVLTree(&cityGraph);
+            printf("\nEmpty land with highest cost found using AVL tree:\n");
+            findAndDisplayMaxCostEmptyLand(avlTree);
+            break;
+        case 5:
+            listAllNodes(&cityGraph);
+            break;
+        case 6:
+            listAllEdges(&cityGraph);
+            break;
+
+        case 7:
+            printf("\nAverage Housing Cost (of empty land) in the Area: %.2f\n", calculateAverageHousingCost(&cityGraph));
+            break;
+
+        default:
+            printf("Invalid choice. Exiting...\n");
+            return 0;
         }
 
-    } while (choice >= 1 && choice <= 6);  // Continue the loop for valid choices
+    } while (choice >= 1 && choice <= 7); // Continue the loop for valid choices
 
     return 0;
 }
