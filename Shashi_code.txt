@@ -949,7 +949,7 @@ int main()
             break;
 
         case 7:
-            printf("\nAverage Housing Cost in the Area: %.2f\n", calculateAverageHousingCost(&cityGraph));
+            printf("\nAverage Housing Cost (of empty land) in the Area: %.2f\n", calculateAverageHousingCost(&cityGraph));
             break;
 
         default:
