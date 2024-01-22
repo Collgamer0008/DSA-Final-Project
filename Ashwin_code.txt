@@ -26,6 +26,49 @@ struct Graph {
     int numNodes;
 };
 
+// Declare a global array to keep track of chosen optimal locations
+int chosenOptimalLocations[MAX_NODES];
+
+// Function to find the optimal location excluding already chosen optimal locations
+int findOptimalLocationExcluding(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int next[MAX_NODES][MAX_NODES], int excludedLocations[MAX_NODES]) {
+    int minCost = INF;
+    int optimalLocation = -1;
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+            int alreadyChosen = 0;
+            for (int j = 0; j < MAX_NODES; ++j) {
+                if (excludedLocations[j] == i + 1) {
+                    alreadyChosen = 1;
+                    break;
+                }
+            }
+
+            if (!alreadyChosen) {
+                int currentCost = graph->nodes[i].housingPrice;
+
+                for (int j = 0; j < graph->numNodes; ++j) {
+                    currentCost += dist[i][j];
+                    if (graph->edges[i][j].traffic == 'L') {
+                        currentCost += 1;
+                    } else if (graph->edges[i][j].traffic == 'M') {
+                        currentCost += 2;
+                    } else if (graph->edges[i][j].traffic == 'H') {
+                        currentCost += 3;
+                    }
+                }
+
+                if (currentCost < minCost) {
+                    minCost = currentCost;
+                    optimalLocation = i + 1;
+                }
+            }
+        }
+    }
+
+    return optimalLocation;
+}
+
 // Function to add an edge to the graph
 void addEdge(struct Graph *graph, int source, int destination, int distance, char traffic) {
     graph->edges[source][destination].destination = destination;
@@ -45,7 +88,7 @@ void inputNodeData(struct Graph *graph) {
         printf("Enter housing price: ");
         scanf("%d", &graph->nodes[i].housingPrice);
 
-        printf("Enter node type (shop, park, gas station, mall, empty land): ");
+        printf("Enter node type (shop, park, gas station, mall, emptyland): ");
         scanf("%s", graph->nodes[i].type);
     }
 }
@@ -222,7 +265,6 @@ void displayMenu() {
 
     printf("Enter your choice (1, 2, 3, ...): ");
 }
-
 // Function to run Dijkstra's algorithm and display shortest paths
 void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX_NODES], int startNode) {
     bool visited[MAX_NODES] = {false};
@@ -277,6 +319,44 @@ void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES], int next[MAX
 }
 
 // Updated main function
+void displayShortestDistances(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimalNode) {
+    printf("\nTotal Distance from Optimal Node to Other Nodes:\n");
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (i != optimalNode) {
+            printf("Optimal Node to Node %d (%s): ", i + 1, graph->nodes[i].type);
+
+            // Display the total distance
+            printf("%d\n", dist[optimalNode][i]);
+        }
+    }
+}
+
+// Updated main function
+void displayTotalDistanceFromOptimal(struct Graph *graph, int dist[MAX_NODES][MAX_NODES], int optimalNode) {
+    printf("\nTotal Distance from Optimal Node to Other Nodes:\n");
+
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (i != optimalNode && strcmp(graph->nodes[i].type, "empty") == 0) {
+            printf("Optimal Node to Node %d (%s): ", i + 1, graph->nodes[i].type);
+
+            // Display the total distance
+            printf("%d\n", dist[optimalNode][i]);
+        }
+    }
+}
+
+// Function to check if there are any empty lands left
+bool hasEmptyLands(struct Graph *graph) {
+    for (int i = 0; i < graph->numNodes; ++i) {
+        if (strcmp(graph->nodes[i].type, "empty") == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Updated main function
 int main() {
     struct Graph cityGraph;
     inputNodeData(&cityGraph);
@@ -292,12 +372,24 @@ int main() {
 
     int dist[MAX_NODES][MAX_NODES];
     int next[MAX_NODES][MAX_NODES];
-    floydsAlgorithm(&cityGraph, dist, next);
+    floydsAlgorithm(&cityGraph, dist, next);  // Initialize next array with Floyd's algorithm
 
     calculateOverallCost(&cityGraph);
 
     int choice;
     int optimalLocation;
+
+    // Initialize the 'next' array before entering the loop
+    for (int i = 0; i < MAX_NODES; ++i) {
+        for (int j = 0; j < MAX_NODES; ++j) {
+            next[i][j] = -1;
+        }
+    }
+
+    int chosenOptimalLocations[MAX_NODES];
+    for (int i = 0; i < MAX_NODES; ++i) {
+        chosenOptimalLocations[i] = -1;
+    }
 
     do {
         displayMenu();
@@ -305,59 +397,107 @@ int main() {
 
         switch (choice) {
             case 1:
-                printf("Choose algorithm for finding shortest path:\n");
+                printf("Choose algorithm for finding total distance:\n");
                 printf("1. Floyd's Algorithm\n");
-                printf("2. Dijkstra's Algorithm\n");
-                printf("3. Bellman-Ford Algorithm\n");
-                printf("Enter your choice (1, 2, 3): ");
-                int algorithmChoice;
-                scanf("%d", &algorithmChoice);
+                printf("2. Bellman-Ford Algorithm\n");
+                printf("Enter your choice (1, 2): ");
+                int algorithmChoice1;
+                scanf("%d", &algorithmChoice1);
 
-                switch (algorithmChoice) {
+                switch (algorithmChoice1) {
                     case 1:
-                        optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                        chosenOptimalLocations[0] = optimalLocation;
                         break;
                     case 2:
-                        printf("Enter the starting node for Dijkstra's Algorithm: ");
-                        int dijkstraStartNode;
-                        scanf("%d", &dijkstraStartNode);
-                        dijkstrasAlgorithm(&cityGraph, dist[dijkstraStartNode - 1], next[dijkstraStartNode - 1], dijkstraStartNode - 1);
-                        optimalLocation = findOptimalLocation(&cityGraph, dist, next);
-                        break;
-                    case 3:
                         printf("Enter the starting node for Bellman-Ford Algorithm: ");
                         int bellmanFordStartNode;
                         scanf("%d", &bellmanFordStartNode);
                         bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
-                        optimalLocation = findOptimalLocation(&cityGraph, dist, next);
+                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                        chosenOptimalLocations[0] = optimalLocation;
                         break;
                     default:
                         printf("Invalid choice. Exiting...\n");
                         return 0;
                 }
+
+                if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
+                    printf("\nThere are no empty lands.\n");
+                } else {
+                    printf("\nThe best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+                    displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
+                }
                 break;
             case 2:
-                // Similar logic for the second best optimal location and so on
+                printf("Choose algorithm for finding total distance:\n");
+                printf("1. Floyd's Algorithm\n");
+                printf("2. Bellman-Ford Algorithm\n");
+                printf("Enter your choice (1, 2): ");
+                int algorithmChoice2;
+                scanf("%d", &algorithmChoice2);
+
+                switch (algorithmChoice2) {
+                    case 1:
+                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                        chosenOptimalLocations[1] = optimalLocation;
+                        break;
+                    case 2:
+                        printf("Enter the starting node for Bellman-Ford Algorithm: ");
+                        int bellmanFordStartNode;
+                        scanf("%d", &bellmanFordStartNode);
+                        bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                        chosenOptimalLocations[1] = optimalLocation;
+                        break;
+                    default:
+                        printf("Invalid choice. Exiting...\n");
+                        return 0;
+                }
+
+                if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
+                    printf("\nThere are no empty lands.\n");
+                } else {
+                    printf("\nThe second best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+                    displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
+                }
                 break;
             case 3:
-                // Similar logic for the third best optimal location and so on
+                printf("Choose algorithm for finding total distance:\n");
+                printf("1. Floyd's Algorithm\n");
+                printf("2. Bellman-Ford Algorithm\n");
+                printf("Enter your choice (1, 2): ");
+                int algorithmChoice3;
+                scanf("%d", &algorithmChoice3);
+
+                switch (algorithmChoice3) {
+                    case 1:
+                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                        chosenOptimalLocations[2] = optimalLocation;
+                        break;
+                    case 2:
+                        printf("Enter the starting node for Bellman-Ford Algorithm: ");
+                        int bellmanFordStartNode;
+                        scanf("%d", &bellmanFordStartNode);
+                        bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1], next[bellmanFordStartNode - 1], bellmanFordStartNode - 1);
+                        optimalLocation = findOptimalLocationExcluding(&cityGraph, dist, next, chosenOptimalLocations);
+                        chosenOptimalLocations[2] = optimalLocation;
+                        break;
+                    default:
+                        printf("Invalid choice. Exiting...\n");
+                        return 0;
+                }
+
+                if (optimalLocation == -1 || !hasEmptyLands(&cityGraph)) {
+                    printf("\nThere are no empty lands.\n");
+                } else {
+                    printf("\nThe third best optimal location for the house is Node %d (empty land).\n", optimalLocation);
+                    displayTotalDistanceFromOptimal(&cityGraph, dist, optimalLocation - 1);
+                }
                 break;
-            // Add more cases as needed
             default:
                 printf("Invalid choice. Exiting...\n");
                 return 0;
-        }
-
-        if (optimalLocation == -1) {
-            printf("\nThere are no empty lands.\n");
-        } else {
-            printf("\nThe best optimal location for the house is Node %d (empty land).\n", optimalLocation);
-            // Display the shortest paths from the optimal empty land to other locations
-            for (int i = 0; i < cityGraph.numNodes; ++i) {
-                if (strcmp(cityGraph.nodes[i].type, "empty") == 0) {
-                    displayShortestPath(&cityGraph, next, i, optimalLocation);
-                }
-            }
         }
 
     } while (choice >= 1 && choice <= 3);  // Continue the loop for valid choices
