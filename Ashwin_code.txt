@@ -1061,17 +1061,13 @@ int main()
                     optimalLocation = findOptimalLocationExcluding(
                         &cityGraph, dist, next, chosenOptimalLocations);
                     chosenOptimalLocations[0] = optimalLocation;
+                    floydsAlgorithm(&cityGraph, dist[optimalLocation - 1],next[optimalLocation - 1]);
                     break;
                 case 2:
-                    printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                    int bellmanFordStartNode;
-                    scanf("%d", &bellmanFordStartNode);
-                    bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1],
-                                         next[bellmanFordStartNode - 1],
-                                         bellmanFordStartNode - 1);
-                    optimalLocation = findOptimalLocationExcluding(
+                   optimalLocation = findOptimalLocationExcluding(
                         &cityGraph, dist, next, chosenOptimalLocations);
                     chosenOptimalLocations[0] = optimalLocation;
+                    bellmanFordAlgorithm(&cityGraph, dist[optimalLocation - 1],next[optimalLocation - 1],optimalLocation - 1);
                     break;
                 default:
                     printf("Invalid choice. Exiting...\n");
@@ -1107,17 +1103,13 @@ int main()
                     optimalLocation = findOptimalLocationExcluding(
                         &cityGraph, dist, next, chosenOptimalLocations);
                     chosenOptimalLocations[1] = optimalLocation;
+                    floydsAlgorithm(&cityGraph, dist[optimalLocation - 1],next[optimalLocation - 1]);
                     break;
                 case 2:
-                    printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                    int bellmanFordStartNode;
-                    scanf("%d", &bellmanFordStartNode);
-                    bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1],
-                                         next[bellmanFordStartNode - 1],
-                                         bellmanFordStartNode - 1);
                     optimalLocation = findOptimalLocationExcluding(
                         &cityGraph, dist, next, chosenOptimalLocations);
                     chosenOptimalLocations[1] = optimalLocation;
+                    bellmanFordAlgorithm(&cityGraph, dist[optimalLocation - 1],next[optimalLocation - 1],optimalLocation - 1);
                     break;
                 default:
                     printf("Invalid choice. Exiting...\n");
@@ -1153,17 +1145,13 @@ int main()
                     optimalLocation = findOptimalLocationExcluding(
                         &cityGraph, dist, next, chosenOptimalLocations);
                     chosenOptimalLocations[2] = optimalLocation;
+                    floydsAlgorithm(&cityGraph, dist[optimalLocation - 1],next[optimalLocation - 1]);
                     break;
                 case 2:
-                    printf("Enter the starting node for Bellman-Ford Algorithm: ");
-                    int bellmanFordStartNode;
-                    scanf("%d", &bellmanFordStartNode);
-                    bellmanFordAlgorithm(&cityGraph, dist[bellmanFordStartNode - 1],
-                                         next[bellmanFordStartNode - 1],
-                                         bellmanFordStartNode - 1);
                     optimalLocation = findOptimalLocationExcluding(
                         &cityGraph, dist, next, chosenOptimalLocations);
                     chosenOptimalLocations[2] = optimalLocation;
+                    bellmanFordAlgorithm(&cityGraph, dist[optimalLocation - 1],next[optimalLocation - 1],optimalLocation - 1);
                     break;
                 default:
                     printf("Invalid choice. Exiting...\n");
