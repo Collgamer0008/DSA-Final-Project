@@ -1238,11 +1238,13 @@ int main()
     {
         // Check if the graph is connected
         int visited[MAX_NODES] = {0};
-        if (!isGraphConnected(&cityGraph, visited, 0))
-        {
-            printf("The city is not connected.\n");
-            return 0;
-        }
+
+        inputNodeData(&cityGraph);
+        // if (!isGraphConnected(&cityGraph, visited, 0))
+        // {
+        //     printf("The city is not connected.\n");
+        //     return 0;
+        // }
 
         inputEdgeData(&cityGraph);
 
