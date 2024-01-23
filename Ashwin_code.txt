@@ -270,7 +270,10 @@ void findAndDisplayMaxCostEmptyLand(struct AVLNode *root)
 int chosenOptimalLocations[MAX_NODES];
 
 // Function to find the optimal location excluding already chosen optimal
-// locations
+// Function to find the optimal location for a house excluding specific locations
+// Input: Graph structure representing the city, distance matrix, next matrix, array of excluded locations
+// Output: Optimal location for the house
+// Description: Uses Dijkstra's algorithm to find the optimal location for a house, excluding specified locations.
 int findOptimalLocationExcluding(struct Graph *graph,
                                  int dist[MAX_NODES][MAX_NODES],
                                  int next[MAX_NODES][MAX_NODES],
@@ -559,6 +562,10 @@ int findOptimalLocation(struct Graph *graph, int dist[MAX_NODES][MAX_NODES],
     return optimalLocation;
 }
 
+// Function to perform heapify operation on an array of nodes
+// Input: Array of nodes, size of the array, index for heapification
+// Output: None
+// Description: Ensures that the array satisfies the heap property at a given index.
 void heapify(struct Node arr[], int n, int i)
 {
     int largest = i;
@@ -581,6 +588,11 @@ void heapify(struct Node arr[], int n, int i)
     }
 }
 
+// Function to perform heap sort on an array of nodes
+// Input: Array of nodes, size of the array
+// Output: None
+// Description: Sorts the array of nodes in non-decreasing order using heap sort.
+
 void heapSort(struct Node arr[], int n)
 {
     for (int i = n / 2 - 1; i >= 0; i--)
@@ -597,6 +609,10 @@ void heapSort(struct Node arr[], int n)
 }
 
 // Function to list all nodes in increasing order of housing cost
+// Function to list all nodes in increasing order of housing cost
+// Input: Graph structure representing the city
+// Output: None (Prints the list to the console)
+// Description: Prints the list of nodes sorted by housing cost to the console.
 void listAllNodes(struct Graph *graph)
 {
     struct Node sortedNodes[MAX_NODES];
@@ -616,6 +632,11 @@ void listAllNodes(struct Graph *graph)
 }
 
 // Function to list all edges with distance and traffic values
+// Function to list all edges with distance and traffic values
+// Input: Graph structure representing the city
+// Output: None (Prints the list to the console)
+// Description: Prints the list of edges with distance and traffic values to the console.
+
 void listAllEdges(struct Graph *graph)
 {
     printf("\nList of All Edges with Distance and Traffic Values:\n");
@@ -632,6 +653,10 @@ void listAllEdges(struct Graph *graph)
 
 // Function to display the shortest path from the optimal empty land to a
 // specified location
+// Function to display the shortest path from the optimal empty land to a specified location
+// Input: Graph structure representing the city, next matrix, optimal empty land, destination node
+// Output: None (Prints the shortest path to the console)
+// Description: Uses the next matrix to display the shortest path from the optimal empty land to a specified location.
 void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES],
                          int optimalEmptyLand, int destination)
 {
@@ -648,7 +673,10 @@ void displayShortestPath(struct Graph *graph, int next[MAX_NODES][MAX_NODES],
 }
 
 // Function to display the menu and execute corresponding actions
-// Updated menu
+// Function to display the menu and execute corresponding actions
+// Input: None
+// Output: None (Prints the menu to the console)
+// Description: Displays the menu to the console and executes the corresponding actions based on user input.
 void displayMenu()
 {
     printf("\n<------------------------------------------------------------------------->\n\n");
@@ -665,6 +693,10 @@ void displayMenu()
 }
 
 // Function to run Dijkstra's algorithm and display shortest paths
+// Function to run Dijkstra's algorithm and display shortest paths
+// Input: Graph structure representing the city, distance array, next array, starting node
+// Output: None (Prints the shortest distances to the console)
+// Description: Executes Dijkstra's algorithm and prints the shortest distances to the console.
 void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES],
                         int next[MAX_NODES], int startNode)
 {
@@ -703,6 +735,10 @@ void dijkstrasAlgorithm(struct Graph *graph, int dist[MAX_NODES],
 }
 
 // Function to run Bellman-Ford algorithm and display shortest paths
+// Function to run Bellman-Ford algorithm and display shortest paths
+// Input: Graph structure representing the city, distance array, next array, starting node
+// Output: None (Prints the shortest distances to the console)
+// Description: Executes Bellman-Ford algorithm and prints the shortest distances to the console.
 void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES],
                           int next[MAX_NODES], int startNode)
 {
@@ -732,6 +768,10 @@ void bellmanFordAlgorithm(struct Graph *graph, int dist[MAX_NODES],
 }
 
 // Updated main function
+// Function to display the total distance from the optimal node to other nodes
+// Input: Graph structure representing the city, distance matrix, optimal node
+// Output: None (Prints the total distance to the console)
+// Description: Displays the total distance from the optimal node to other nodes in the city.
 void displayShortestDistances(struct Graph *graph,
                               int dist[MAX_NODES][MAX_NODES], int optimalNode)
 {
@@ -749,7 +789,11 @@ void displayShortestDistances(struct Graph *graph,
     }
 }
 
-// Updated main function
+
+// Function to display the total distance from the optimal node to other empty nodes
+// Input: Graph structure representing the city, distance matrix, optimal node
+// Output: None (Prints the total distance to the console)
+// Description: Displays the total distance from the optimal node to other empty nodes in the city.
 void displayTotalDistanceFromOptimal(struct Graph *graph,
                                      int dist[MAX_NODES][MAX_NODES],
                                      int optimalNode)
@@ -769,6 +813,10 @@ void displayTotalDistanceFromOptimal(struct Graph *graph,
 }
 
 // Function to check if there are any empty lands left
+// Function to check if there are any empty lands left
+// Input: Graph structure representing the city
+// Output: Boolean indicating whether there are empty lands
+// Description: Checks if there are any empty lands left in the city.
 bool hasEmptyLands(struct Graph *graph)
 {
     for (int i = 0; i < graph->numNodes; ++i)
@@ -780,6 +828,11 @@ bool hasEmptyLands(struct Graph *graph)
     }
     return false;
 }
+
+// Function to calculate the average housing cost of empty lands in the area
+// Input: Graph structure representing the city
+// Output: Average housing cost (float)
+// Description: Calculates and returns the average housing cost of empty lands in the city.
 float calculateAverageHousingCost(struct Graph *graph)
 {
     int totalCost = 0;
@@ -803,6 +856,10 @@ float calculateAverageHousingCost(struct Graph *graph)
     return (float)totalCost / numEmptyLands;
 }
 
+// Function to display the city graph representation
+// Input: Graph structure representing the city
+// Output: None (Prints the graph to the console)
+// Description: Displays the city graph representation to the console.
 void displayCityGraph(struct Graph *graph)
 {
     printf("\nCity Graph Representation:\n");
@@ -843,6 +900,10 @@ void displayCityGraph(struct Graph *graph)
 }
 
 // Function to generate a random city graph
+// Function to generate a random city graph
+// Input: Graph structure representing the city
+// Output: None (Generates random data for the city graph)
+// Description: Populates the city graph with random data for testing and demonstration purposes.
 void generateRandomCity(struct Graph *graph)
 {
     const int MAX_NODES_LIMIT = 30;    // Maximum number of nodes for the random city
@@ -906,7 +967,12 @@ void generateRandomCity(struct Graph *graph)
     graph->numNodes = numNodes;
 }
 
-// Updated main function
+
+// Main function to execute the program
+// Input: None
+// Output: Returns 0 upon successful execution
+// Description: The main entry point of the program. Executes the main logic and controls the flow of the program.
+
 int main()
 {
     struct Graph cityGraph;
@@ -935,7 +1001,7 @@ int main()
 
     char generateRandomCityChoice;
     printf("\033[1;36m");
-    printf("\n Welcome to Urban Estates, where your dream home awaits. Discover optimal living with our personalized real estate solutions. \n");
+    printf("\n Welcome to Urban-Aalaya, where your dream home awaits. Discover optimal living with our personalized real estate solutions. \n");
     printf("\033[0m");
     printf("\n");
     printf("Do you want to generate a random city? (Y/N): ");
