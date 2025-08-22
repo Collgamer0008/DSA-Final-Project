@@ -109,3 +109,11 @@ python3 client_malicious.py
 - **Persistent attackers** face decreasing reputation, leading to harder PoW until eventually being **blocked**.  
 
 
+## Screenshots  
+
+This section contains execution and result screenshots from the implementation.  
+
+![Screenshot 1](Screenshots/normal_server_and_client.png)  
+![Screenshot 2](Screenshots/attack_server_and_client.png)  
+
+
